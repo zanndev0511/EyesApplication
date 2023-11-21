@@ -4,8 +4,9 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 class CameraPreviewPage extends StatefulWidget {
-  CameraPreviewPage(this.file, {super.key});
+  CameraPreviewPage(this.file, this.result, {super.key});
   XFile file;
+  String result;
 
   @override
   State<CameraPreviewPage> createState() => _CameraPreviewPageState();
