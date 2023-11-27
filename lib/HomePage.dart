@@ -14,6 +14,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  int currentMode = 0;
   bool isWorking = false;
   String result = "";
   late CameraController cameraController;
@@ -27,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   initCamera() {
-    cameraController = CameraController(cameras[1], ResolutionPreset.high);
+    cameraController = CameraController(cameras[0], ResolutionPreset.high);
     cameraController.initialize().then((value) {
       if (!mounted) {
         return;
@@ -102,13 +103,71 @@ class _HomePageState extends State<HomePage> {
                   return;
                 }
               },
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height,
-                child: AspectRatio(
-                  aspectRatio: cameraController.value.aspectRatio,
-                  child: CameraPreview(cameraController),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height - 200,
+                    child: AspectRatio(
+                      aspectRatio: cameraController.value.aspectRatio,
+                      child: CameraPreview(cameraController),
+                    ),
+                  ),
+                  Center(
+                    child: IconButton(
+                      onPressed: () {
+                        // Xử lý sự kiện chụp hình
+                      },
+                      icon: const Icon(Icons.camera),
+                      color: Colors.blue,
+                      iconSize: 90,
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Ink(
+                        decoration: const ShapeDecoration(
+                          color: Colors.red, // Màu nền của icon button
+                          shape: CircleBorder(
+                              side: BorderSide(color: Colors.blue, width: 3.0)),
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            // Xử lý sự kiện chụp hình
+                          },
+                          icon: const Icon(
+                            Icons.description,
+                            // Màu của biểu tượng
+                          ),
+                          color: Colors.white,
+                          iconSize: 40,
+                        ),
+                      ),
+                      const SizedBox(width: 10.0),
+                      Ink(
+                        decoration: const ShapeDecoration(
+                          color: Colors.green, // Màu nền của icon button
+                          shape: CircleBorder(
+                              side: BorderSide(color: Colors.blue, width: 3.0)),
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            // Xử lý sự kiện chụp hình
+                          },
+                          icon: const Icon(
+                            Icons.emoji_objects,
+                            // Màu của biểu tượng
+                          ),
+                          color: Colors.white,
+                          iconSize: 40,
+                        ),
+                      )
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
