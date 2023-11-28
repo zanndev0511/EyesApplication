@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:eyes_app/CameraPreviewPage.dart';
 import 'package:eyes_app/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:tflite_v2/tflite_v2.dart';
 
 class HomePage extends StatefulWidget {
@@ -15,6 +16,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentMode = 0;
+
+  final FlutterTts flutterTts = FlutterTts();
+
   bool isWorking = false;
   String result = "";
   late CameraController cameraController;
@@ -27,6 +31,16 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+// Hàm để đọc từ
+  speak(String text) async {
+    await flutterTts
+        .setLanguage("vi-VN"); // Đặt ngôn ngữ, có thể thay đổi theo nhu cầu
+    await flutterTts.setPitch(1.0); // Đặt pitch
+    await flutterTts.setSpeechRate(0.5); // Đặt tốc độ đọc
+
+    await flutterTts.speak(text);
+  }
+
   initCamera() {
     cameraController = CameraController(cameras[0], ResolutionPreset.high);
     cameraController.initialize().then((value) {
@@ -35,6 +49,16 @@ class _HomePageState extends State<HomePage> {
       }
       setState(() {});
     });
+  }
+
+  checkCurrentMode() {
+    switch (currentMode) {
+      case 0:
+        speak("Đây là chế độ đọc văn bản");
+        break;
+      case 1:
+        speak("Đây là chế độ dò vật thể");
+    }
   }
 
   imageClassification(File image) async {
@@ -64,6 +88,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     loadModel();
     initCamera();
+    checkCurrentMode();
   }
 
   @override
@@ -103,25 +128,25 @@ class _HomePageState extends State<HomePage> {
                   return;
                 }
               },
+              onHorizontalDragStart: (details) {
+                setState(() {
+                  if (currentMode < 1) {
+                    ++currentMode;
+                  } else {
+                    currentMode = 0;
+                  }
+                  checkCurrentMode();
+                });
+              },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height - 200,
+                    height: MediaQuery.of(context).size.height - 100,
                     child: AspectRatio(
                       aspectRatio: cameraController.value.aspectRatio,
                       child: CameraPreview(cameraController),
-                    ),
-                  ),
-                  Center(
-                    child: IconButton(
-                      onPressed: () {
-                        // Xử lý sự kiện chụp hình
-                      },
-                      icon: const Icon(Icons.camera),
-                      color: Colors.blue,
-                      iconSize: 90,
                     ),
                   ),
                   const SizedBox(height: 8.0),
@@ -129,29 +154,38 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Ink(
-                        decoration: const ShapeDecoration(
+                        decoration: ShapeDecoration(
                           color: Colors.red, // Màu nền của icon button
                           shape: CircleBorder(
-                              side: BorderSide(color: Colors.blue, width: 3.0)),
+                              side: BorderSide(
+                            color: currentMode == 0
+                                ? Colors.blue
+                                : Colors.transparent,
+                            width: 3.0,
+                          )),
                         ),
                         child: IconButton(
-                          onPressed: () {
-                            // Xử lý sự kiện chụp hình
-                          },
+                          onPressed: () {},
                           icon: const Icon(
                             Icons.description,
                             // Màu của biểu tượng
                           ),
                           color: Colors.white,
-                          iconSize: 40,
+                          iconSize: currentMode == 0 ? 60 : 40,
                         ),
                       ),
                       const SizedBox(width: 10.0),
                       Ink(
-                        decoration: const ShapeDecoration(
+                        decoration: ShapeDecoration(
                           color: Colors.green, // Màu nền của icon button
                           shape: CircleBorder(
-                              side: BorderSide(color: Colors.blue, width: 3.0)),
+                            side: BorderSide(
+                              color: currentMode == 1
+                                  ? Colors.blue
+                                  : Colors.transparent,
+                              width: 3.0,
+                            ),
+                          ),
                         ),
                         child: IconButton(
                           onPressed: () {
@@ -162,7 +196,7 @@ class _HomePageState extends State<HomePage> {
                             // Màu của biểu tượng
                           ),
                           color: Colors.white,
-                          iconSize: 40,
+                          iconSize: currentMode == 1 ? 60 : 40,
                         ),
                       )
                     ],
