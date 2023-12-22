@@ -1,5 +1,6 @@
 import 'package:another_flutter_splash_screen/another_flutter_splash_screen.dart';
 import 'package:eyes_app/HomePage.dart';
+import 'package:eyes_app/common/SpeakToText.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -15,13 +16,15 @@ class _MySplashPageState extends State<MySplashPage> {
   void initState() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: [SystemUiOverlay.bottom]);
+    speak(
+        'Chào mừng đến với Eye For You, hãy nhấn màn hình để chụp hình nhận dạng');
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return FlutterSplashScreen(
-      duration: const Duration(milliseconds: 3000),
+      duration: const Duration(milliseconds: 5000),
       nextScreen: const HomePage(),
       backgroundColor: Colors.white,
       splashScreenBody: Center(

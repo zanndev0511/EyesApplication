@@ -21,11 +21,22 @@ dependencies:
   google_ml_kit: ^0.16.3
   flutter_tts: ^3.8.5
   card_swiper: ^3.0.1
+  translator: ^0.1.7
+  step_progress_indicator: ^1.0.2
+  flutter_vision: ^1.1.4
+  flutter_speed_dial: ^7.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: '^0.13.1'
+
+flutter_launcher_icons:
+  android: 'launcher_icon'
+  ios: true
+  image_path: 'assets/images/Eyes4U.png'
+  min_sdk_android: 21
 flutter:
   uses-material-design: true
   assets:
@@ -33,3 +44,13 @@ flutter:
     - assets/images/
     - assets/tflite/mobilenet_v1_1.0_224.tflite
     - assets/tflite/mobilenet_v1_1.0_224.txt
+    - assets/tflite/object_labels.txt
+    - assets/tflite/money_labels.txt
+    - assets/tflite/yolov8n_float16.tflite
+    - assets/tflite/objects_float32.tflite
+    - assets/tflite/money_float32.tflite
+    - assets/tflite/moneys_float32.tflite
+    - assets/models/money8s.pt
+    - assets/models/yolov8n.pt
+    - assets/models/best.pt
+    - assets/labels.csv

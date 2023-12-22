@@ -1,14 +1,13 @@
-import 'dart:ffi';
-import 'dart:io';
-import 'dart:math';
-
 import 'package:camera/camera.dart';
 import 'package:card_swiper/card_swiper.dart';
+import 'package:eyes_app/MoneyPreviewPage.dart';
+import 'package:eyes_app/MySplashPage.dart';
 import 'package:eyes_app/ObjectPreviewPage.dart';
 import 'package:eyes_app/TextPreviewPage.dart';
+import 'package:eyes_app/common/SpeakToText.dart';
 import 'package:eyes_app/main.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter_vision/flutter_vision.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:tflite_v2/tflite_v2.dart';
 
@@ -21,22 +20,18 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int currentMode = 0;
-
-  final FlutterTts flutterTts = FlutterTts();
-
   final List<IconData> iconList = [
     Icons.description,
     Icons.emoji_objects,
-    // Add more icons as needed
+    Icons.payments,
   ];
   final List<Color> iconColor = [
     Colors.red,
-    Colors.green
-    // Add more icons as needed
+    Colors.green,
+    Colors.yellow.shade600,
   ];
 
   bool isWorking = false;
-  String result = "";
   late CameraController cameraController;
   CameraImage? imgCamera;
 
@@ -45,22 +40,11 @@ class _HomePageState extends State<HomePage> {
   String scannedText = "";
   bool textScanning = false;
 
-  loadModel() async {
-    await Tflite.loadModel(
-      model: 'assets/tflite/mobilenet_v1_1.0_224.tflite',
-      labels: 'assets/tflite/mobilenet_v1_1.0_224.txt',
-    );
-  }
-
-// Hàm để đọc từ
-  speak(String text) async {
-    await flutterTts
-        .setLanguage("vi-VN"); // Đặt ngôn ngữ, có thể thay đổi theo nhu cầu
-    await flutterTts.setPitch(1.0); // Đặt pitch
-    await flutterTts.setSpeechRate(0.5); // Đặt tốc độ đọc
-
-    await flutterTts.speak(text);
-  }
+  late FlutterVision vision;
+  late List<Map<String, dynamic>> yoloResults;
+  int imageHeight = 1;
+  int imageWidth = 1;
+  bool isLoaded = false;
 
   initCamera() {
     cameraController = CameraController(cameras[0], ResolutionPreset.high);
@@ -75,37 +59,16 @@ class _HomePageState extends State<HomePage> {
   checkCurrentMode() {
     switch (currentMode) {
       case 0:
-        speak("Đây là chế độ đọc văn bản");
+        speak("Nhận dạng văn bản");
         break;
       case 1:
-        speak("Đây là chế độ dò vật thể");
+        speak("Nhận dạng vật thể");
+      case 2:
+        speak("Nhận dạng tiền tệ");
     }
   }
 
-  imageClassification(File image) async {
-    final List? recognitions = await Tflite.runModelOnImage(
-      path: image.path,
-      numResults: 6,
-      threshold: 0.05,
-      imageMean: 127.5,
-      imageStd: 127.5,
-    );
-
-    result = '';
-
-    recognitions!.forEach((response) {
-      result += response['label'] +
-          ' ' +
-          (response['confidence'] as double).toStringAsFixed(2) +
-          '\n\n';
-    });
-    setState(() {
-      result;
-    });
-  }
-
   void _animateToCenter(int index) {
-    // Animate the card to the center
     _swiperController.move(index);
   }
 
@@ -148,11 +111,17 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       } else if (currentMode == 1) {
-        await imageClassification(File(file.path));
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ObjectPreviewPage(file, result),
+            builder: (context) => ObjectPreviewPage(file, vision),
+          ),
+        );
+      } else if (currentMode == 2) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MoneyPreviewPage(file, vision),
           ),
         );
       }
@@ -165,7 +134,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    loadModel();
+    vision = FlutterVision();
     initCamera();
     checkCurrentMode();
   }
@@ -174,60 +143,82 @@ class _HomePageState extends State<HomePage> {
   void dispose() async {
     super.dispose();
     await Tflite.close();
+    await vision.closeYoloModel();
     cameraController.dispose();
   }
 
-  @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: SafeArea(
         child: Scaffold(
           body: Center(
             child: GestureDetector(
-              onLongPress: takePicture,
-              onHorizontalDragStart: (details) {
-                setState(() {
-                  if (currentMode < 1) {
-                    ++currentMode;
-                  } else {
-                    currentMode = 0;
-                  }
-                  _animateToCenter(currentMode);
-                  checkCurrentMode();
-                });
+              onTap: takePicture,
+              onHorizontalDragEnd: (DragEndDetails details) {
+                if (details.primaryVelocity! > 0) {
+                  setState(() {
+                    if (currentMode > 0) {
+                      // If currentMode is 3, reset it to 0 when swiping right
+                      --currentMode;
+                    } else {
+                      // Otherwise, decrement currentMode
+                      currentMode = 2;
+                    }
+                    _animateToCenter(currentMode);
+                    checkCurrentMode();
+                  });
+                  print('Swiped right');
+                } else if (details.primaryVelocity! < 0) {
+                  setState(() {
+                    if (currentMode < 2) {
+                      // If currentMode is 3, reset it to 0 when swiping right
+                      ++currentMode;
+                    } else {
+                      // Otherwise, decrement currentMode
+                      currentMode = 0;
+                    }
+                    _animateToCenter(currentMode);
+                    checkCurrentMode();
+                  });
+
+                  print('Swiped left');
+                }
               },
-              child: Container(
-                color: Colors.black,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height - 100,
-                      child: AspectRatio(
-                        aspectRatio: cameraController.value.aspectRatio,
+              child: Align(
+                alignment: Alignment.center,
+                child: Container(
+                  color: Colors.black,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height - 200,
                         child: CameraPreview(cameraController),
                       ),
-                    ),
-                    const SizedBox(height: 8.0),
-                    Container(
-                      height: 80,
-                      child: Swiper(
-                        itemBuilder: (BuildContext context, int index) {
-                          return _buildIconWidget(
-                              iconList[index], iconColor[index]);
-                        },
-                        itemCount: iconList.length,
-                        viewportFraction: 0.25,
-                        scale: 0.9,
-                        loop: false,
-                        onIndexChanged: (value) =>
-                            {currentMode = value, checkCurrentMode()},
-                        index: currentMode,
-                        controller: _swiperController,
+                      const SizedBox(height: 25.0),
+                      Center(
+                        child: Container(
+                          height: 80,
+                          child: Swiper(
+                            itemBuilder: (BuildContext context, int index) {
+                              return _buildIconWidget(
+                                  iconList[index], iconColor[index]);
+                            },
+                            itemCount: iconList.length,
+                            viewportFraction: 0.25,
+                            scale: 0.9,
+                            loop: false,
+                            onIndexChanged: (value) =>
+                                {currentMode = value, checkCurrentMode()},
+                            index: currentMode,
+                            controller: _swiperController,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -242,7 +233,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       margin: EdgeInsets.all((currentMode == iconIndex) ? 0 : 5),
       decoration: ShapeDecoration(
-          color: iconColor, // Màu nền của icon button
+          color: iconColor,
           shape: CircleBorder(
             side: BorderSide(
               color:
@@ -251,9 +242,7 @@ class _HomePageState extends State<HomePage> {
             ),
           )),
       child: IconButton(
-        onPressed: () {
-          // Xử lý sự kiện chụp hình
-        },
+        onPressed: () {},
         icon: Icon(iconData),
         color: Colors.white,
         iconSize: (currentMode == iconIndex) ? 40 : 30,

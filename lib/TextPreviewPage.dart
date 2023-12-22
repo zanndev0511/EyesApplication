@@ -41,25 +41,33 @@ class _TextPreviewPageState extends State<TextPreviewPage> {
         alignment: Alignment.center,
         width: MediaQuery.of(context).size.width,
         height: MediaQuery.of(context).size.height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blue, Colors.green],
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background_text.jpeg'),
+            fit: BoxFit.cover,
           ),
         ),
         child: SingleChildScrollView(
           child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(
+                  20.0), // Đặt giá trị này theo mong muốn của bạn
+            ),
             alignment: Alignment.center,
-            padding: const EdgeInsets.all(5.0),
-            child: Text(
-              widget.scannedText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+            margin: const EdgeInsets.only(left: 20.0, right: 20.0),
+            padding: const EdgeInsets.all(5),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              child: Text(
+                widget.scannedText,
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
           ),
         ),
